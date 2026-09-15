@@ -87,33 +87,35 @@
       background: #f1f5f9;
     }
 
+    /* Selected state */
     .card.selected {
-      border-color: #2563eb;
-      background: #eff6ff;
+      border-color: #2563eb !important;
+      background: #eff6ff !important;
       box-shadow: 0 0 0 2px #2563eb;
     }
 
-    /* Active Pair State (Before Checking) */
-    .card.paired {
-      border-color: #0284c7;
-      background: #e0f2fe;
-    }
-
-    /* Post-Check Answer Styles */
+    /* Correct match state */
     .card.correct {
       border-color: #16a34a !important;
       background: #dcfce7 !important;
       color: #14532d !important;
       font-weight: 600;
+      cursor: default;
       pointer-events: none;
     }
 
+    /* Incorrect match state */
     .card.incorrect {
       border-color: #dc2626 !important;
       background: #fee2e2 !important;
       color: #7f1d1d !important;
-      font-weight: 600;
-      pointer-events: none;
+      animation: shake 0.4s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
     }
 
     .badge {
@@ -149,42 +151,20 @@
       color: #1e293b;
     }
 
-    .btn-group {
-      display: flex;
-      gap: 10px;
-    }
-
-    button {
+    .btn-reset {
       padding: 10px 20px;
       border: none;
       border-radius: 6px;
       font-size: 0.95rem;
       font-weight: 600;
       cursor: pointer;
+      background-color: #2563eb;
+      color: white;
       transition: background 0.2s ease;
     }
 
-    .btn-check {
-      background-color: #2563eb;
-      color: white;
-    }
-
-    .btn-check:hover {
-      background-color: #1d4ed8;
-    }
-
-    .btn-reset {
-      background-color: #64748b;
-      color: white;
-    }
-
     .btn-reset:hover {
-      background-color: #475569;
-    }
-
-    button:disabled {
-      background-color: #cbd5e1;
-      cursor: not-allowed;
+      background-color: #1d4ed8;
     }
   </style>
 </head>
@@ -206,11 +186,8 @@
   </div>
 
   <div class="controls">
-    <div class="score-board" id="score-board">Pairs Matched: 0 / 10</div>
-    <div class="btn-group">
-      <button class="btn-check" id="btn-check" onclick="checkAnswers()" disabled>Check Answers</button>
-      <button class="btn-reset" onclick="resetGame()">Reset Game</button>
-    </div>
+    <div class="score-board" id="score-board">Score: 0 / 10</div>
+    <button class="btn-reset" onclick="resetGame()">Reset Game</button>
   </div>
 </div>
 
@@ -230,7 +207,8 @@
 
   let selectedScenario = null;
   let selectedComponent = null;
-  let userMatches = {}; // scenarioId -> componentId
+  let matchesCount = 0;
+  let isChecking = false;
 
   function shuffle(array) {
     return array.slice().sort(() => Math.random() - 0.5);
@@ -239,9 +217,9 @@
   function initGame() {
     selectedScenario = null;
     selectedComponent = null;
-    userMatches = {};
-    document.getElementById('btn-check').disabled = true;
-    document.getElementById('score-board').textContent = "Pairs Matched: 0 / 10";
+    matchesCount = 0;
+    isChecking = false;
+    document.getElementById('score-board').textContent = "Score: 0 / 10";
 
     const scenariosContainer = document.getElementById('scenarios-list');
     const componentsContainer = document.getElementById('components-list');
@@ -249,6 +227,7 @@
     scenariosContainer.innerHTML = '';
     componentsContainer.innerHTML = '';
 
+    // Independently jumble both columns
     const shuffledScenarios = shuffle(data);
     const shuffledComponents = shuffle(data);
 
@@ -272,74 +251,66 @@
   }
 
   function selectScenario(card, id) {
-    if (card.classList.contains('paired') || card.classList.contains('correct')) return;
+    if (isChecking || card.classList.contains('correct')) return;
     
     document.querySelectorAll('#scenarios-list .card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     selectedScenario = { element: card, id: id };
     
-    tryPair();
+    checkPair();
   }
 
   function selectComponent(card, id) {
-    if (card.classList.contains('paired') || card.classList.contains('correct')) return;
+    if (isChecking || card.classList.contains('correct')) return;
 
     document.querySelectorAll('#components-list .card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     selectedComponent = { element: card, id: id };
 
-    tryPair();
+    checkPair();
   }
 
-  function tryPair() {
+  function checkPair() {
     if (selectedScenario && selectedComponent) {
-      // Store match attempt
-      userMatches[selectedScenario.id] = selectedComponent.id;
+      isChecking = true;
+      const scenEl = selectedScenario.element;
+      const compEl = selectedComponent.element;
 
-      // Mark cards as paired
-      selectedScenario.element.classList.remove('selected');
-      selectedComponent.element.classList.remove('selected');
-      
-      selectedScenario.element.classList.add('paired');
-      selectedComponent.element.classList.add('paired');
+      if (selectedScenario.id === selectedComponent.id) {
+        // CORRECT MATCH -> Turn Green
+        scenEl.classList.remove('selected');
+        compEl.classList.remove('selected');
 
-      selectedScenario = null;
-      selectedComponent = null;
+        scenEl.classList.add('correct');
+        compEl.classList.add('correct');
 
-      const matchedCount = Object.keys(userMatches).length;
-      document.getElementById('score-board').textContent = `Pairs Matched: ${matchedCount} / 10`;
+        matchesCount++;
+        document.getElementById('score-board').textContent = `Score: ${matchesCount} / 10`;
 
-      if (matchedCount === 10) {
-        document.getElementById('btn-check').disabled = false;
+        if (matchesCount === 10) {
+          document.getElementById('score-board').textContent = "Great Job! All 10 Matched Correctly! 🎉";
+        }
+
+        selectedScenario = null;
+        selectedComponent = null;
+        isChecking = false;
+      } else {
+        // INCORRECT MATCH -> Turn Red & Shake
+        scenEl.classList.remove('selected');
+        compEl.classList.remove('selected');
+
+        scenEl.classList.add('incorrect');
+        compEl.classList.add('incorrect');
+
+        setTimeout(() => {
+          scenEl.classList.remove('incorrect');
+          compEl.classList.remove('incorrect');
+          selectedScenario = null;
+          selectedComponent = null;
+          isChecking = false;
+        }, 800);
       }
     }
-  }
-
-  function checkAnswers() {
-    let score = 0;
-    
-    Object.keys(userMatches).forEach(scenarioId => {
-      const componentId = userMatches[scenarioId];
-      const scenarioCard = document.querySelector(`#scenarios-list .card[data-id="${scenarioId}"]`);
-      const componentCard = document.querySelector(`#components-list .card[data-id="${componentId}"]`);
-
-      // Remove intermediate styles
-      scenarioCard.classList.remove('paired');
-      componentCard.classList.remove('paired');
-
-      // Check if IDs match
-      if (parseInt(scenarioId) === parseInt(componentId)) {
-        score++;
-        scenarioCard.classList.add('correct');
-        componentCard.classList.add('correct');
-      } else {
-        scenarioCard.classList.add('incorrect');
-        componentCard.classList.add('incorrect');
-      }
-    });
-
-    document.getElementById('score-board').textContent = `Final Score: ${score} / 10`;
-    document.getElementById('btn-check').disabled = true;
   }
 
   function resetGame() {
