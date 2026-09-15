@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PE Fitness Components Matching Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #f4f7f6;
+      color: #333;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .game-container {
+      max-width: 900px;
+      width: 100%;
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+
+    p.instructions {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+
+    .game-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+
+    @media (max-width: 768px) {
+      .game-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .column-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #334155;
+      text-align: center;
+    }
+
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      padding: 12px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      user-select: none;
+    }
+
+    .card:hover {
+      border-color: #94a3b8;
+      background: #f1f5f9;
+    }
+
+    .card.selected {
+      border-color: #2563eb;
+      background: #eff6ff;
+      box-shadow: 0 0 0 2px #2563eb;
+    }
+
+    .card.matched {
+      opacity: 0.6;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .card.correct {
+      border-color: #16a34a !important;
+      background: #f0fdf4 !important;
+      color: #15803d;
+    }
+
+    .card.incorrect {
+      border-color: #dc2626 !important;
+      background: #fef2f2 !important;
+      color: #b91c1c;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
+
+    .badge-hrf {
+      background-color: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge-srf {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 20px;
+    }
+
+    .score-board {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .btn-check {
+      background-color: #2563eb;
+      color: white;
+    }
+
+    .btn-check:hover {
+      background-color: #1d4ed8;
+    }
+
+    .btn-reset {
+      background-color: #64748b;
+      color: white;
+    }
+
+    .btn-reset:hover {
+      background-color: #475569;
+    }
+
+    button:disabled {
+      background-color: #cbd5e1;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+<div class="game-container">
+  <h1>PE Fitness Components Match</h1>
+  <p class="instructions">Click a <strong>Sports Scenario</strong> on the left, then click its matching <strong>Fitness Component</strong> on the right.</p>
+
+  <div class="game-grid">
+    <div>
+      <div class="column-title">Sports Scenarios</div>
+      <div class="card-list" id="scenarios-list"></div>
+    </div>
+    <div>
+      <div class="column-title">Fitness Components</div>
+      <div class="card-list" id="components-list"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="score-board" id="score-board">Pairs Matched: 0 / 10</div>
+    <div class="btn-group">
+      <button class="btn-check" id="btn-check" onclick="checkAnswers()" disabled>Check Answers</button>
+      <button class="btn-reset" onclick="resetGame()">Reset Game</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const data = [
+    { id: 1, scenario: "A 100m sprinter launches off the blocks the instant the starter pistol fires.", component: "Reaction Time", type: "SRF" },
+    { id: 2, scenario: "A gymnast holds a perfectly still handstand on the balance beam without swaying.", component: "Balance", type: "SRF" },
+    { id: 3, scenario: "A tennis player tracks a fast ball and swings their racket to hit a clean volley.", component: "Coordination", type: "SRF" },
+    { id: 4, scenario: "A high jumper explodes off the track using max force and speed to clear the bar.", component: "Power", type: "SRF" },
+    { id: 5, scenario: "A swimmer pushes off the wall to complete a 50m dash in the fastest time.", component: "Speed", type: "SRF" },
+    { id: 6, scenario: "A basketball player cuts sharply left, dodges a defender, and spins right.", component: "Agility", type: "SRF" },
+    { id: 7, scenario: "A marathon runner keeps moving for 42 km while their heart & lungs supply oxygen.", component: "Cardiovascular Endurance", type: "HRF" },
+    { id: 8, scenario: "A weightlifter exerts maximal force to lift a 120kg barbell overhead once.", component: "Muscular Strength", type: "HRF" },
+    { id: 9, scenario: "A swimmer performs 50 continuous push-ups during dryland training.", component: "Muscular Endurance", type: "HRF" },
+    { id: 10, scenario: "A hurdle runner reaches their leg over the barrier without hamstring tightness.", component: "Flexibility", type: "HRF" }
+  ];
+
+  let selectedScenario = null;
+  let selectedComponent = null;
+  let userMatches = {}; // scenarioId -> componentId
+
+  function shuffle(array) {
+    return array.slice().sort(() => Math.random() - 0.5);
+  }
+
+  function initGame() {
+    selectedScenario = null;
+    selectedComponent = null;
+    userMatches = {};
+    document.getElementById('btn-check').disabled = true;
+    document.getElementById('score-board').textContent = "Pairs Matched: 0 / 10";
+
+    const scenariosContainer = document.getElementById('scenarios-list');
+    const componentsContainer = document.getElementById('components-list');
+
+    scenariosContainer.innerHTML = '';
+    componentsContainer.innerHTML = '';
+
+    const shuffledScenarios = shuffle(data);
+    const shuffledComponents = shuffle(data);
+
+    shuffledScenarios.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.id = item.id;
+      card.textContent = item.scenario;
+      card.onclick = () => selectScenario(card, item.id);
+      scenariosContainer.appendChild(card);
+    });
+
+    shuffledComponents.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.id = item.id;
+      card.innerHTML = `${item.component} <span class="badge ${item.type === 'HRF' ? 'badge-hrf' : 'badge-srf'}">${item.type}</span>`;
+      card.onclick = () => selectComponent(card, item.id);
+      componentsContainer.appendChild(card);
+    });
+  }
+
+  function selectScenario(card, id) {
+    if (card.classList.contains('matched')) return;
+    
+    document.querySelectorAll('#scenarios-list .card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedScenario = { element: card, id: id };
+    
+    tryPair();
+  }
+
+  function selectComponent(card, id) {
+    if (card.classList.contains('matched')) return;
+
+    document.querySelectorAll('#components-list .card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedComponent = { element: card, id: id };
+
+    tryPair();
+  }
+
+  function tryPair() {
+    if (selectedScenario && selectedComponent) {
+      // Store match attempt
+      userMatches[selectedScenario.id] = selectedComponent.id;
+
+      // Visual link
+      selectedScenario.element.classList.remove('selected');
+      selectedComponent.element.classList.remove('selected');
+      
+      selectedScenario.element.classList.add('matched');
+      selectedComponent.element.classList.add('matched');
+
+      selectedScenario = null;
+      selectedComponent = null;
+
+      const matchedCount = Object.keys(userMatches).length;
+      document.getElementById('score-board').textContent = `Pairs Matched: ${matchedCount} / 10`;
+
+      if (matchedCount === 10) {
+        document.getElementById('btn-check').disabled = false;
+      }
+    }
+  }
+
+  function checkAnswers() {
+    let score = 0;
+    
+    Object.keys(userMatches).forEach(scenarioId => {
+      const componentId = userMatches[scenarioId];
+      const scenarioCard = document.querySelector(`#scenarios-list .card[data-id="${scenarioId}"]`);
+      const componentCard = document.querySelector(`#components-list .card[data-id="${componentId}"]`);
+
+      if (parseInt(scenarioId) === parseInt(componentId)) {
+        score++;
+        scenarioCard.classList.add('correct');
+        componentCard.classList.add('correct');
+      } else {
+        scenarioCard.classList.add('incorrect');
+        componentCard.classList.add('incorrect');
+      }
+    });
+
+    document.getElementById('score-board').textContent = `Final Score: ${score} / 10`;
+    document.getElementById('btn-check').disabled = true;
+  }
+
+  function resetGame() {
+    initGame();
+  }
+
+  // Initialize on load
+  window.onload = initGame;
+</script>
+
+</body>
+</html>
