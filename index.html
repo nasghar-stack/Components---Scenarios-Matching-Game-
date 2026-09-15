@@ -93,22 +93,27 @@
       box-shadow: 0 0 0 2px #2563eb;
     }
 
-    .card.matched {
-      opacity: 0.6;
-      cursor: default;
-      pointer-events: none;
+    /* Active Pair State (Before Checking) */
+    .card.paired {
+      border-color: #0284c7;
+      background: #e0f2fe;
     }
 
+    /* Post-Check Answer Styles */
     .card.correct {
       border-color: #16a34a !important;
-      background: #f0fdf4 !important;
-      color: #15803d;
+      background: #dcfce7 !important;
+      color: #14532d !important;
+      font-weight: 600;
+      pointer-events: none;
     }
 
     .card.incorrect {
       border-color: #dc2626 !important;
-      background: #fef2f2 !important;
-      color: #b91c1c;
+      background: #fee2e2 !important;
+      color: #7f1d1d !important;
+      font-weight: 600;
+      pointer-events: none;
     }
 
     .badge {
@@ -267,7 +272,7 @@
   }
 
   function selectScenario(card, id) {
-    if (card.classList.contains('matched')) return;
+    if (card.classList.contains('paired') || card.classList.contains('correct')) return;
     
     document.querySelectorAll('#scenarios-list .card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
@@ -277,7 +282,7 @@
   }
 
   function selectComponent(card, id) {
-    if (card.classList.contains('matched')) return;
+    if (card.classList.contains('paired') || card.classList.contains('correct')) return;
 
     document.querySelectorAll('#components-list .card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
@@ -291,12 +296,12 @@
       // Store match attempt
       userMatches[selectedScenario.id] = selectedComponent.id;
 
-      // Visual link
+      // Mark cards as paired
       selectedScenario.element.classList.remove('selected');
       selectedComponent.element.classList.remove('selected');
       
-      selectedScenario.element.classList.add('matched');
-      selectedComponent.element.classList.add('matched');
+      selectedScenario.element.classList.add('paired');
+      selectedComponent.element.classList.add('paired');
 
       selectedScenario = null;
       selectedComponent = null;
@@ -318,6 +323,11 @@
       const scenarioCard = document.querySelector(`#scenarios-list .card[data-id="${scenarioId}"]`);
       const componentCard = document.querySelector(`#components-list .card[data-id="${componentId}"]`);
 
+      // Remove intermediate styles
+      scenarioCard.classList.remove('paired');
+      componentCard.classList.remove('paired');
+
+      // Check if IDs match
       if (parseInt(scenarioId) === parseInt(componentId)) {
         score++;
         scenarioCard.classList.add('correct');
@@ -336,7 +346,6 @@
     initGame();
   }
 
-  // Initialize on load
   window.onload = initGame;
 </script>
 
